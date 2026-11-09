@@ -100,7 +100,7 @@ class MainActivity : Activity() {
             .putBoolean(KEY_PENDING_ENABLE, false)
             .apply()
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        stopService(Intent(this, KeepAwakeService::class.java))
+        startService(Intent(this, KeepAwakeService::class.java).setAction(KeepAwakeService.ACTION_DISABLE))
         refreshStatus()
     }
 
