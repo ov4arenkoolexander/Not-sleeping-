@@ -21,8 +21,13 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        requestNotificationPermissionIfNeeded()
         buildInterface()
+        requestNotificationPermissionIfNeeded()
+
+        // Restore the user's previously enabled mode if Android recreated the activity.
+        if (preferences.getBoolean(KEY_ENABLED, false)) {
+            startKeepAwakeService()
+        }
         refreshStatus()
     }
 
@@ -74,9 +79,18 @@ class MainActivity : Activity() {
     private fun enableKeepAwake() {
         preferences.edit().putBoolean(KEY_ENABLED, true).apply()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        val intent = Intent(this, KeepAwakeService::class.java).setAction(KeepAwakeService.ACTION_ENABLE)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent) else startService(intent)
+        startKeepAwakeService()
         refreshStatus()
+    }
+
+    private fun startKeepAwakeService() {
+        val intent = Intent(this, KeepAwakeService::class.java)
+            .setAction(KeepAwakeService.ACTION_ENABLE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
     }
 
     private fun disableKeepAwake() {
@@ -88,18 +102,31 @@ class MainActivity : Activity() {
 
     private fun refreshStatus() {
         val enabled = preferences.getBoolean(KEY_ENABLED, false)
-        if (::status.isInitialized) status.text = if (enabled) "РЕЖИМ УВІМКНЕНО\nЕкран не засинатиме" else "РЕЖИМ ВИМКНЕНО"
+        if (::status.isInitialized) {
+            status.text = if (enabled) {
+                "РЕЖИМ УВІМКНЕНО\nЕкран не засинатиме"
+            } else {
+                "РЕЖИМ ВИМКНЕНО"
+            }
+        }
         if (::enableButton.isInitialized) enableButton.isEnabled = !enabled
         if (::disableButton.isInitialized) disableButton.isEnabled = enabled
-        if (enabled) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        if (enabled) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
     }
 
     private fun requestNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
+            requestPermissions(
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                REQUEST_NOTIFICATIONS
+            )
         }
     }
 
