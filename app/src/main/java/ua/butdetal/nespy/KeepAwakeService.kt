@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.graphics.drawable.Icon
 import android.os.IBinder
 import android.os.PowerManager
 
@@ -83,8 +84,9 @@ class KeepAwakeService : Service() {
             Intent(this, KeepAwakeService::class.java).setAction(ACTION_DISABLE),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val disableIcon = Icon.createWithResource(this, android.R.drawable.ic_media_pause)
         val disableAction = Notification.Action.Builder(
-            android.R.drawable.ic_media_pause,
+            disableIcon,
             "Вимкнути",
             disableIntent
         ).build()
